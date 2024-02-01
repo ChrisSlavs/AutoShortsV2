@@ -1,0 +1,13 @@
+Python:
+    elevenlabs
+    moviepy (V2.0.0.dev2 from github)
+    PRAW
+
+Windows:
+    CLI:
+        whisperai
+
+    Path: 
+        FFmpeg
+        ImageMagick
+          
