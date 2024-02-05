@@ -12,14 +12,14 @@ Color formatting of subtitles
 
 
 ## TODO
-~~Create file structure~~
-test and debug
-write used post id to a manifest
-~~split text into 2500 char or less~~
-~~recieve multiple voiceovers from elevenlabs and handle output~~
-~~splice together elevenlabs api voiceovers after recieving all of them~~
-delete files used for splicing
-add non voiceover ending to video
+~~Create file structure~~\
+test and debug\
+write used post id to a manifest\
+~~split text into 2500 char or less~~\
+~~recieve multiple voiceovers from elevenlabs and handle output~~\
+~~splice together elevenlabs api voiceovers after recieving all of them~~\
+delete files used for splicing\
+add non voiceover ending to video\
 
 
 ## Possible TODO
@@ -31,7 +31,7 @@ Therefore it is best to wrap any classes to extend their funtionality.
 
 ### Changes
 Ver 3:
-Added elevenlabs support
-Fixed video freezing issue
-Added checks to remove non-ASCII char from texts
+Added elevenlabs support\
+Fixed video freezing issue\
+Added checks to remove non-ASCII char from texts\
 general clean up
