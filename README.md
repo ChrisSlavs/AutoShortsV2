@@ -12,18 +12,20 @@ Color formatting of subtitles
 
 
 ## TODO
-~~Create file structure~~\
 test and debug\
-write used post id to a manifest\
+~~Create file structure~~\
+~~write used post id to a manifest~~\
 ~~split text into 2500 char or less~~\
 ~~recieve multiple voiceovers from elevenlabs and handle output~~\
 ~~splice together elevenlabs api voiceovers after recieving all of them~~\
-delete files used for splicing\
-add non voiceover ending to video\
+~~delete files used for splicing~~\
+add color coding to subtitles
+add regex for AITA and replace with "A" "I" "T" "A" in text\
 
 
 ## Possible TODO
-add title reading intro
+add non voiceover ending to video\
+add title reading intro\
 
 ## Limitations
 Extending the classes of PRAW models does not work in many cases due to its own internal structure,
