@@ -2,7 +2,8 @@ import re
 
 regex = {"EMOJI": re.compile(u'([\U00002600-\U000027BF])|([\U0001f300-\U0001f64F])|([\U0001f680-\U0001f6FF])'),
          "ALPHANUMERIC": re.compile(r'\W+'),
-         "NON_ASCII": re.compile(r'[^\x00-\x7F]+')}
+         "NON_ASCII": re.compile(r'[^\x00-\x7F]+'),
+         "AITA": re.compile(r"AITA|aita|a-i-t-a|a i t a|A I T A|A-I-T-A")}
 
 elevenlabs_api = { "url"    : "https://api.elevenlabs.io/v1/text-to-speech/",
                    "voices" : {"Alex": "hKULXlJp90RYPLVAaOJI"}, 
