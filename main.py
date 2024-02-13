@@ -266,7 +266,6 @@ class Post():
             
     def run_text(self, filePaths:dict, payload:dict, voiceID:str="hKULXlJp90RYPLVAaOJI", model:str="base"):
         self.set_attributes(filePaths=filePaths)
-        """
         if not check_if_file_exists(self.filePaths['text']):
             self.get_text()
         if not check_if_file_exists(self.filePaths['voiceover']['final']):
@@ -274,17 +273,14 @@ class Post():
         if not check_if_file_exists(self.filePaths['subtitles']['first']) and not check_if_file_exists(self.filePaths['subtitles']['final']):
             self.get_srt(model)
         # always cut finals, not a way to check for efficiently as chopping each segment takes < 1 second
-        """
 
     def run_video(self, manifestFile:str, vidCodec:str="libx264"):
         if not check_if_file_exists(self.filePaths['subtitles']['final']):
             self.markup_srt()
-        """
         if not check_if_file_exists(self.filePaths['final']['final']):
             self.burn_final(vidCodec=vidCodec)
         self.cut_finals()
         self.write_manifest(manifestFile=manifestFile)
-        """
         print(f"Finished. ID: {self.submission.id}")
 
         return
@@ -351,6 +347,8 @@ def list_mods(subreddit:models.Subreddit, mod_manifest:str):
     dateDelta = 0
     currentDate = 0
 
+    # update mod list if certain time frame has passed, less API calls
+    # than checking against a list of known mod names
     fileCheck = check_if_file_exists(mod_manifest)
     currentDate = datetime.date.today()
     if fileCheck:
