@@ -21,9 +21,11 @@ from moviepy.editor import *
 POST_LIMIT = 3
 SUBREDDIT = ""
 MANIFEST_FILE = "Working/manifest.txt"
+SHORT_LENGTH = 58
 
 # global variable
-subtitle_color_weight = 6
+# lower to increase amount of coloring
+SUBTITLE_COLOR_WEIGHT = 1
 
 class Post():
     def __init__(self, submission:models.Submission=None):
@@ -156,60 +158,56 @@ class Post():
 
     def markup_srt(self, color:str="yellow"):
         print("Marking up srt")
-        global subtitle_color_weight        
+        global SUBTITLE_COLOR_WEIGHT        
         # local variables
-        markup = f'<font color="{color}">'
+        markup = [f'<font color="{color}">', f'</font>']
         lines = []
         randStrIndex = 0
         strList = []
         coin = 0
+        
         # open SRT
         with open(self.filePaths['subtitles']['first'], 'r') as f:
             lines = [line for line in f]
-            
+
             # srt is formatted with a new subtitle every 4 lines, starting at index two if indexed in python list
         for i in range(2, len(lines), 4):
+            # check if any word > 10 char add new line in word if so
+            words = lines[i].strip().split(" ")
+            newLine = " ".join([word[:5] + "-\n" + word[(len(word) - 6):] if len(word) > 10 else word for word in words])
+            lines[i] = newLine + "\n"
             # check if there is more than one space before doing coin toss
-            if lines[i].count(" ") >= 2:
+            print(lines[i])
+            if lines[i].count(" ") >= 1:
                 # choose if line will have a color word
-                coin = rand.randint(0, subtitle_color_weight)
-                if (coin == subtitle_color_weight):
-                    lines[i] = lines[i].strip()
-                    strList = lines[i].split(" ")
+                coin = rand.randint(0, SUBTITLE_COLOR_WEIGHT)
+                print("Coin: ", coin)
+                if (coin == SUBTITLE_COLOR_WEIGHT):
+                    print("hit")
+                    # all seems inefficient.....
+                    strList = lines[i].strip().split(" ")                    
                     randStrIndex = rand.randint(0, len(strList) - 1)
-                    # if index chosen is the last index of strList
-                    if (randStrIndex == len(strList) - 1):
-                        strList.insert(randStrIndex, markup)
-                        strList.append("</font>")
-                        strList.append("\n")
-                        lines[i] = " ".join(strList)
-                    else:
-                        # if index is not last index
-                        strList.insert(randStrIndex, markup)
-                        strList.insert(randStrIndex + 2, "</font>")
-                        strList.append("\n")
-                        lines[i] = " ".join(strList)
+                    strList[randStrIndex] = markup_word(strList[randStrIndex], markup=markup)
+                    strList.append("\n")
+                    lines[i] = " ".join(strList)
 
             # will always add markup to subtitles that are one word
             elif (lines[i].count(" ") == 0 and lines[i] != lines[-1]):
-                stripped = lines[i].strip()
-                strList = stripped.split(" ")
-                strList.insert(0, markup)
-                strList.append("</font>")
-                strList.append("\n")
-                lines[i] = " ".join(strList)
+                strList = lines[i].strip()
+                lines[i] = f"{markup_word(strList, markup=markup)}\n"
 
         # write new lines lsit to srt file
         with open(self.filePaths['subtitles']['final'], 'w') as f:
             for line in lines:
                 f.write(line)
 
-        if check_if_file_exists(self.filePaths['subtitles']['first']):
-           os.remove(self.filePaths['subtitles']['first'])
+       # if check_if_file_exists(self.filePaths['subtitles']['first']):
+       #    os.remove(self.filePaths['subtitles']['first'])
 
         return
              
-    def burn_final(self, vidCodec:str="libx264"):  
+    def burn_final(self, vidCodec:str="libx264"):
+        global SHORT_LENGTH
         print("Creating final")
         # duration of voice over
         voiceover = AudioFileClip(self.filePaths["voiceover"]['final'])
@@ -223,10 +221,10 @@ class Post():
             bgVideo.close()
             start = rand.randint(0, int(bgDuration) - int(voiceoverDuration))
             # cut background video
-            subprocess.Popen(f"ffmpeg -ss {start} -i {self.filePaths['background_original']} -force_key_frames expr:gte(t,n_forced*60) -c copy -t {voiceoverDuration + 2} {self.filePaths['background']}").wait()
+            subprocess.Popen(f"ffmpeg -ss {start} -i {self.filePaths['background_original']} -force_key_frames expr:gte(t,n_forced*2) -c copy -t {voiceoverDuration + 2} {self.filePaths['background']}").wait()
 
         # add audio and subtitles        
-        subprocess.Popen(f"ffmpeg -i {self.filePaths['background']} -i {self.filePaths['voiceover']['final']} -force_key_frames expr:gte(t,n_forced*60) -vf subtitles={self.filePaths['subtitles']['final']}:force_style='FontName=Roboto,Alignment=10,Fontsize=36,OutlineColour=#000000,Outline=1' -c:v {vidCodec} -c:a aac -strict experimental -map 0:v -map 1:a {self.filePaths['final']['final']}").wait()
+        subprocess.Popen(f"ffmpeg -i {self.filePaths['background']} -i {self.filePaths['voiceover']['final']} -force_key_frames expr:gte(t,n_forced*2) -vf subtitles={self.filePaths['subtitles']['final']}:force_style='FontName=Roboto,Alignment=10,Fontsize=36,OutlineColour=#000000,Outline=1' -c:v {vidCodec} -c:a aac -strict experimental -map 0:v -map 1:a {self.filePaths['final']['final']}").wait()
 
         if os.path.exists(self.filePaths['background']) and os.path.isfile(self.filePaths['background']):
             os.remove(self.filePaths['background'])
@@ -234,27 +232,28 @@ class Post():
         return
     
     def cut_finals(self):
+        global SHORT_LENGTH
         print("Cutting final segments")
         # maybe cut video before to preserve quality
         video = VideoFileClip(self.filePaths["final"]["basename"])
         duration = video.duration
         video.close()
         
-        if (duration > 60):
+        if (duration > SHORT_LENGTH):
             segmentCount = 0
-            segmentCount = int(video.duration) // 60
+            segmentCount = int(video.duration) // SHORT_LENGTH
             print(segmentCount)
             
             for i in range(0, segmentCount):
                 self.filePaths['final'][str(i)] = f"{self.filePaths['final']['basename'][:-4]}PART{i}.mp4"
                 
-                start = i * 60
-                print("Start: ", start, "End: ", start + 60, "i Val: ", i)
-                subprocess.Popen(f"ffmpeg -ss {start} -i {self.filePaths['final']['basename']} -c copy -t 60 {self.filePaths['final'][str(i)]}").wait()
+                start = i * SHORT_LENGTH
+                print("Start: ", start, "End: ", start + SHORT_LENGTH, "i Val: ", i)
+                subprocess.Popen(f"ffmpeg -ss {start} -i {self.filePaths['final']['basename']} -c copy -t {str(SHORT_LENGTH)} {self.filePaths['final'][str(i)]}").wait()
 
-            if (int(duration) % 60) != 0:
+            if (int(duration) % SHORT_LENGTH) != 0:
                 self.filePaths['final'][str(i+1)] = f"{self.filePaths['final']['basename'][:-4]}PART{i+1}.mp4"
-                subprocess.Popen(f"ffmpeg -ss {segmentCount * 60} -i {self.filePaths['final']['basename']} -c copy -t {duration % 60} {self.filePaths['final'][str(i+1)]}").wait()
+                subprocess.Popen(f"ffmpeg -ss {segmentCount * SHORT_LENGTH} -i {self.filePaths['final']['basename']} -c copy -t {duration % SHORT_LENGTH} {self.filePaths['final'][str(i+1)]}").wait()
 
         return
 
@@ -267,28 +266,25 @@ class Post():
             
     def run_text(self, filePaths:dict, payload:dict, voiceID:str="hKULXlJp90RYPLVAaOJI", model:str="base"):
         self.set_attributes(filePaths=filePaths)
+        """
         if not check_if_file_exists(self.filePaths['text']):
             self.get_text()
         if not check_if_file_exists(self.filePaths['voiceover']['final']):
             self.get_voiceover(payload, voiceID)
         if not check_if_file_exists(self.filePaths['subtitles']['first']) and not check_if_file_exists(self.filePaths['subtitles']['final']):
             self.get_srt(model)
+        # always cut finals, not a way to check for efficiently as chopping each segment takes < 1 second
+        """
+
+    def run_video(self, manifestFile:str, vidCodec:str="libx264"):
         if not check_if_file_exists(self.filePaths['subtitles']['final']):
             self.markup_srt()
-        # always cut finals, not a way to check for efficiently as chopping each segment takes < 1 second
-    
-    def run_video(self, manifestFile:str, vidCodec:str="libx264"):
-        print("Please check text files for correctness before cutting videos.\n")
-        print("Inputting 4 into console will continue.\n")
-        x = 0
-        while x != 4:
-            x = input()
-                  
+        """
         if not check_if_file_exists(self.filePaths['final']['final']):
             self.burn_final(vidCodec=vidCodec)
         self.cut_finals()
         self.write_manifest(manifestFile=manifestFile)
-
+        """
         print(f"Finished. ID: {self.submission.id}")
 
         return
@@ -383,6 +379,18 @@ def list_mods(subreddit:models.Subreddit, mod_manifest:str):
     
     return
 
+def markup_word(word:str, markup:list):
+    # return variable
+    wordMarked = ""
+
+    wordSplit = word.split()
+    wordSplit.insert(0, f"{markup[0]}")
+    wordSplit.append(f"{markup[1]}")
+
+    wordMarked = "".join(wordSplit)
+
+    return wordMarked
+
 if __name__=="__main__":
         
         ########## EDIT HERE #########
@@ -399,7 +407,6 @@ if __name__=="__main__":
                      "ffmpeg_vid_codec"     :"libx264",
                      "whisperai_model"      :"base",
                      "working_file_paths"   :file_paths}
-        
         
         ########## INIT ##########
         # variables
@@ -427,19 +434,28 @@ if __name__=="__main__":
         # function calls
         # get raw posts
         # dict comprehension to create Post class instances
-        posts_dict = get_posts(subreddit, MANIFEST_FILE, 
-                                f"{user_data['working_file_paths']['mod_manifest']}{subreddit.fullname}.txt")
-        
-        for val in posts_dict.values():
-            print(val.submission.id)
+#        posts_dict = get_posts(subreddit, MANIFEST_FILE, 
+#                                f"{user_data['working_file_paths']['mod_manifest']}{subreddit.fullname}.txt")
+
+        #TESTING
+        posts_dict = {"1aoy5mr":Post(submission=models.Submission(reddit=reddit, id='1aoy5mr'))}
 
         # call to write text
+
         for key in posts_dict.keys():
             posts_dict[key].run_text(user_data["working_file_paths"], 
                                      payload=payload, 
                                      voiceID=user_data["elevenlabs_voice_ID"], 
                                      model=user_data["whisperai_model"])
 
+
         for key in posts_dict.keys():
+            print("Please check text files for correctness before cutting videos.\n")
+            print("Inputting 4 into console will continue.\n")
+            x = 0
+            while x != 4:
+                x = int(input())
+
             posts_dict[key].run_video(manifestFile=MANIFEST_FILE,
                                       vidCodec=user_data["ffmpeg_vid_codec"])
+        
