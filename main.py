@@ -432,11 +432,11 @@ if __name__=="__main__":
         # function calls
         # get raw posts
         # dict comprehension to create Post class instances
-#        posts_dict = get_posts(subreddit, MANIFEST_FILE, 
-#                                f"{user_data['working_file_paths']['mod_manifest']}{subreddit.fullname}.txt")
+        posts_dict = get_posts(subreddit, MANIFEST_FILE, 
+                                f"{user_data['working_file_paths']['mod_manifest']}{subreddit.fullname}.txt")
 
         #TESTING
-        posts_dict = {"1aoy5mr":Post(submission=models.Submission(reddit=reddit, id='1aoy5mr'))}
+        #posts_dict = {"1aoy5mr":Post(submission=models.Submission(reddit=reddit, id='1aoy5mr'))}
 
         # call to write text
 
